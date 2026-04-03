@@ -6,23 +6,17 @@ logger = logging.getLogger(__name__)
 
 class ActivationExtractor:
     """
-    Wraps the CSP model with forward hooks on MLP hidden states.
+    Wraps a causal LM with forward hooks on MLP hidden states.
 
-    IMPORTANT: The CSP model is a CUSTOM architecture (circuitgpt),
-    NOT standard GPT-2. Layer names differ from vanilla GPT-2.
+    Works with any HuggingFace model — set the hook pattern to match
+    the model's MLP module names (e.g. 'model.layers.{layer_id}.mlp'
+    for Qwen/Llama-style architectures).
 
-    The model ships with a built-in hook_recorder (see hook_utils.py
-    in the HuggingFace repo). If available, prefer using it:
-        with hook_recorder() as rec:
-            model(idx)
-        # rec keys: "0.mlp.act_in", "0.attn.act_out", etc.
-
-    If hook_recorder is not available from the HF download, use manual
-    register_forward_hook after identifying layer names via
-    model.named_modules().
+    Inspect model.named_modules() to find the correct pattern, then
+    call set_hook_pattern() before register_hooks().
     """
 
-    def __init__(self, model, tokenizer, device, n_layers=8,
+    def __init__(self, model, tokenizer, device, n_layers=28,
                  use_hook_recorder=False, hook_recorder_fn=None):
         self.model = model
         self.tokenizer = tokenizer
@@ -118,7 +112,7 @@ class ActivationExtractor:
             dict[int, torch.Tensor]: {layer_id: activation_vector}
             Each tensor is shape [n_neurons] (1D, the MLP expansion dim)
         """
-        # CRITICAL: add_special_tokens=False per CSP requirements
+        # add_special_tokens=False for code-completion style extraction
         inputs = self.tokenizer(
             prompt_text, return_tensors="pt", add_special_tokens=False
         )["input_ids"].to(self.device)
