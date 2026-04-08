@@ -214,20 +214,30 @@ Identical architecture, adapted for Rust syntax. Uses `tree-sitter-rust` instead
 
 ---
 
-## Data Flow Summary
+## Data File Naming Convention
 
-### File naming convention
+All data files use a `{LANG}_{MODEL}_` prefix:
 
-| Python | Rust |
+| Variable | Values |
 |---|---|
-| `1A_object_prompts.parquet` | `R1A_object_prompts.parquet` |
-| `1B_checker_prompts.parquet` | `R1B_checker_prompts.parquet` |
-| `2_object_activations.h5` | `R2_object_activations.h5` |
-| `2_checker_activations.h5` | `R2_checker_activations.h5` |
-| `3_object_masks_eps{e}_cons{c}.h5` | `R3_object_masks_eps{e}_cons{c}.h5` |
-| `3_checker_masks_eps{e}_cons{c}.h5` | `R3_checker_masks_eps{e}_cons{c}.h5` |
-| `4_neuron_list_eps{e}_cons{c}_L{layers}_both.csv` | `R4_neuron_list_eps{e}_cons{c}_L{layers}_both.csv` |
-| `6_ablation_results.csv` | (not yet implemented) |
+| `LANG` | `P` (Python), `R` (Rust) |
+| `MODEL` | `QW` (Qwen2.5-Coder-7B), `DS` (DeepSeek-Coder-V1-6.7B, future) |
+
+Every notebook sets `LANG`, `MODEL`, and `PREFIX = f"{LANG}_{MODEL}_"` at the top of its config cell. To run a different language/model combo, change these two variables.
+
+### Examples
+
+| Prefix | File |
+|---|---|
+| `P_QW_` | `P_QW_1A_object_prompts.parquet` |
+| `P_QW_` | `P_QW_2_object_activations.h5` |
+| `P_QW_` | `P_QW_4_neuron_list_eps0.5_cons0.8_L..._both.csv` |
+| `P_QW_` | `P_QW_6_ablation_results.csv` |
+| `R_QW_` | `R_QW_1A_object_prompts.parquet` |
+| `R_QW_` | `R_QW_2_object_activations.h5` |
+| `R_DS_` | `R_DS_1A_object_prompts.parquet` (future) |
+
+Note: The `R` prefix on Rust notebook filenames (R1A, R2, etc.) is separate from the data prefix. Rust notebooks produce files like `R_QW_1A_...` (no double R).
 
 ### Object key prefixes
 
