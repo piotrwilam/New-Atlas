@@ -1,8 +1,41 @@
 # Notebook Guide
 
-20 notebooks across 10 stages. Python notebooks have numeric names, Rust notebooks have `R` prefix.
+21 notebooks across 10 stages. Python notebooks have numeric names, Rust notebooks have `R` prefix.
 
-All data files use `{LANG}_{MODEL}_` prefix (e.g., `P_QW_`, `R_QW_`). Each notebook sets `LANG`, `MODEL`, `PREFIX` at the top.
+All data files use `{LANG}_{MODEL}_` prefix (e.g., `P_QW_`, `R_DS_`). Each notebook sets `LANG`, `MODEL`, `PREFIX` at the top.
+
+## Model Configuration
+
+All notebooks share a `MODEL_CONFIGS` dict. To add a new model, add one entry:
+
+```python
+MODEL_CONFIGS = {
+    "QW": {"id": "Qwen/Qwen2.5-Coder-7B",                "n_layers": 28, "mlp_dim": 3584},
+    "DS": {"id": "deepseek-ai/deepseek-coder-6.7b-base",  "n_layers": 32, "mlp_dim": 4096},
+}
+```
+
+`N_LAYERS` and `MLP_DIM` are derived from this dict. No hardcoded dimensions.
+
+## Adding a New Model (e.g., DeepSeek)
+
+1. Run `0_tokeniser_validation` to check keyword tokenization
+2. Reuse existing prompts (copy with new prefix):
+   ```
+   cp P_QW_1A_object_prompts.parquet P_DS_1A_object_prompts.parquet
+   cp P_QW_1B_checker_prompts.parquet P_DS_1B_checker_prompts.parquet
+   cp R_QW_1A_object_prompts.parquet R_DS_1A_object_prompts.parquet
+   cp R_QW_1B_checker_prompts.parquet R_DS_1B_checker_prompts.parquet
+   ```
+3. Set `MODEL = "DS"` in notebooks 2-4 (and R2-R4) and run the pipeline
+4. Rerun experiment notebooks 7_E3, 7_E6, 7_E7 (they load all combos automatically)
+5. Run 10_E8 for cross-model comparison
+
+## Stage 0 — Tokeniser Validation
+
+| Notebook | GPU | Purpose | Input | Output |
+|---|---|---|---|---|
+| `0_tokeniser_validation` | No | Verify keywords are single tokens per model | Tokenizers only | Validation report (display) |
 
 ## Stage 1 — Prompt Generation (language-specific, model-independent except perplexity filter)
 
