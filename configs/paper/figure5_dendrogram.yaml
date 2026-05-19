@@ -1,0 +1,28 @@
+# @package _global_
+# Paper Figure 5a: Rust concept clustering — Qwen2.5-Coder-7B at L14.
+#
+# Reads the decomposition-stage neuron-list XLSX for (R, QW, eps=0.5, cons=0.8),
+# computes pairwise Jaccard on concept-only sets, applies Ward linkage to
+# (1 - Jaccard), and renders a coloured dendrogram.
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure5_rust_dendrogram_qwen
+
+# Which cell of the 2×2 (lang, model) matrix to plot.
+model: QW      # one of QW (Qwen2.5-Coder-7B) | DS (DeepSeek-Coder-V1-6.7B)
+lang: R        # one of R (Rust) | P (Python)
+layer: 14      # paper uses L14 for both Rust dendrograms
+
+# Threshold controls colouring of dendrogram branches. The paper's
+# four-cluster cut for R_QW falls below ~1.6 of the max distance.
+# `null` lets scipy pick its default; set explicitly to lock the cut.
+color_threshold: null
+
+# Figure dimensions in inches (overrides plot_dendrogram default if set).
+figsize: [14, 4.5]
+
+style: paper

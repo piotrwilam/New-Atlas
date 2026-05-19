@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas2x2"
+version = "0.1.0"
+description = "A Cross-Language Circuit Atlas for Code Models — Atlas2x2 paper code"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Piotr Wilam", email = "piotr.wilam.25@ucl.ac.uk" }]
+keywords = ["mechanistic-interpretability", "code-models", "transformers"]
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+# Runtime dependencies — pinned upper bounds so the golden-numbers test
+# doesn't silently drift when a library changes default behaviour.
+dependencies = [
+    "numpy>=1.26,<3",
+    "scipy>=1.11,<2",
+    "matplotlib>=3.8,<4",
+    "openpyxl>=3.1,<4",
+    "h5py>=3.10,<4",
+    "pandas>=2.0,<3",
+    "hydra-core>=1.3,<2",
+    "omegaconf>=2.3,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4,<9",
+    "pytest-cov>=4.1,<6",
+    "nbstripout>=0.7,<1",
+    "ruff>=0.4,<1",
+]
+extraction = [
+    # Used by extraction stage; not needed for analysis/plotting reruns.
+    "torch>=2.1,<3",
+    "transformers>=4.40,<5",
+]
+
+[project.urls]
+Repository = "https://github.com/piotrwilam/New-Atlas"
+"Public release" = "https://github.com/piotrwilam/Atlas2x2"
+
+[tool.setuptools.packages.find]
+include = ["atlas*"]
+exclude = ["tests*", "notebooks*", "experiments*", "src*", "docs*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "requires_data: tests need the frozen XLSX artifacts at DATA_ROOT (skip on CI without them)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
