@@ -50,6 +50,30 @@ def test_load_rust_qw_concept_only(tmp_path: Path) -> None:
     assert out["Baz"] == set()
 
 
+def test_python_ast_and_builtin_prefixes_both_stripped(tmp_path: Path) -> None:
+    """Python data ships with `ast__` (syntax) and `builtin__` (callables)
+    prefixes; both must be stripped so leaf labels in the dendrogram match
+    the paper (e.g. `len`, not `builtin__len`)."""
+    p1 = tmp_path / "P_QW_4_neuron_list_eps0.5_cons0.8_layers_part1_both.xlsx"
+    p2 = tmp_path / "P_QW_4_neuron_list_eps0.5_cons0.8_layers_part2_both.xlsx"
+    _write_synthetic_xlsx(p1, [
+        ("ast__Import",  14, 2, 0, 0, "[1, 2]", "[]", "[]"),
+        ("builtin__len", 14, 2, 0, 0, "[3, 4]", "[]", "[]"),
+    ])
+    _write_synthetic_xlsx(p2, [
+        ("ast__While",     14, 1, 0, 0, "[5]", "[]", "[]"),
+        ("builtin__range", 14, 1, 0, 0, "[6]", "[]", "[]"),
+    ])
+
+    out = load_neuron_lists(
+        model="QW", lang="P", eps=0.5, cons=0.8, layer=14, data_root=tmp_path,
+    )
+    assert set(out) == {"Import", "len", "While", "range"}, f"got keys {set(out)}"
+    assert out["Import"] == {1, 2}
+    assert out["len"] == {3, 4}
+    assert out["range"] == {6}
+
+
 def test_invalid_model_raises(tmp_path: Path) -> None:
     with pytest.raises(AssertionError, match="model must be one of"):
         load_neuron_lists(

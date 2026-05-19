@@ -20,7 +20,21 @@ from atlas.paths import DATA_ROOT
 
 _VALID_MODELS = {"QW", "DS"}
 _VALID_LANGS = {"P", "R"}
-_PREFIX = {"P": "ast__", "R": "rust__"}
+# Python data uses two prefixes — `ast__` for syntax-tree concepts (Import,
+# While, For, …) and `builtin__` for callable builtins (len, range, sorted,
+# …). Both are stripped on load so the dendrogram leaf labels match the
+# paper figures (which show just `len`, not `builtin__len`).
+_PREFIXES: dict[str, tuple[str, ...]] = {
+    "P": ("ast__", "builtin__"),
+    "R": ("rust__",),
+}
+
+
+def _strip_prefix(name: str, prefixes: tuple[str, ...]) -> str:
+    for p in prefixes:
+        if name.startswith(p):
+            return name[len(p):]
+    return name
 
 
 def load_neuron_lists(
@@ -62,7 +76,7 @@ def load_neuron_lists(
     assert isinstance(layer, int) and layer >= 0, f"layer must be non-negative int, got {layer!r}"
 
     root = Path(data_root) if data_root is not None else DATA_ROOT
-    prefix = _PREFIX[lang]
+    prefixes = _PREFIXES[lang]
     col_index = {"concept_only": 5, "both": 6, "token_only": 7}[partition]
 
     out: dict[str, set[int]] = {}
@@ -86,5 +100,5 @@ def load_neuron_lists(
                 raise ValueError(
                     f"Could not parse neuron list for {obj!r} L{layer} in {path}: {cell!r}"
                 ) from e
-            out[obj.removeprefix(prefix)] = ids
+            out[_strip_prefix(obj, prefixes)] = ids
     return out
