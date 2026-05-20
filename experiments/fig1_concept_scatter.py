@@ -18,8 +18,8 @@ import hydra
 import matplotlib.pyplot as plt
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
-from scipy.stats import spearmanr
 
+from atlas.analysis import cross_model_correlation
 from atlas.io import load_concept_aggregates
 from atlas.plotting import apply_style
 
@@ -46,7 +46,7 @@ def main(cfg: DictConfig) -> None:
         assert shared, f"no overlapping concepts between QW and DS for lang={lang}"
         x = [qw[c]["mean_cf"] for c in shared]
         y = [ds[c]["mean_cf"] for c in shared]
-        rho, p = spearmanr(x, y)
+        rho, p = cross_model_correlation(x, y, method="spearman")
 
         fig, ax = plt.subplots(figsize=tuple(cfg.figsize))
         ax.scatter(x, y, alpha=0.65, edgecolors="white", linewidths=0.5)

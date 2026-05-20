@@ -14,17 +14,14 @@ Run:
 from __future__ import annotations
 
 import json
-from itertools import combinations
 from pathlib import Path
 
 import hydra
 import matplotlib.pyplot as plt
-import numpy as np
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
-from scipy.stats import pearsonr
 
-from atlas.analysis import jaccard_sets
+from atlas.analysis import pairwise_cosine_vs_jaccard
 from atlas.io import (
     load_jaccard_cosine_correlation,
     load_neuron_lists,
@@ -55,15 +52,7 @@ def main(cfg: DictConfig) -> None:
         layer=cfg.focus_layer, partition="concept_only",
         data_root=Path(cfg.data_root),
     )
-    shared = sorted(set(weights) & set(masks))
-    assert len(shared) >= 2, f"need at least 2 concepts; got {len(shared)}"
-    jacc: list[float] = []
-    cos: list[float] = []
-    norms = {c: weights[c] / np.linalg.norm(weights[c]) for c in shared}
-    for a, b in combinations(shared, 2):
-        jacc.append(jaccard_sets(masks[a], masks[b]))
-        cos.append(float(np.dot(norms[a], norms[b])))
-    r_focus, _ = pearsonr(jacc, cos)
+    jacc, cos, r_focus = pairwise_cosine_vs_jaccard(weights, masks)
 
     fig, axes = plt.subplots(1, 2, figsize=tuple(cfg.figsize))
 

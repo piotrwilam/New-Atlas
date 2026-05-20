@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 
+from atlas.analysis import concept_fraction
 from atlas.io import load_concept_groups, load_concept_sizes_by_layer
 from atlas.plotting import apply_style, plot_temporal_dynamics
 
@@ -27,19 +28,14 @@ def _mean_concept_fraction_per_layer(
     concept_only: dict[str, dict[int, int]],
     universal: dict[str, dict[int, int]],
 ) -> dict[int, float]:
-    """For a list of concepts, average per-concept concept-fraction at
-    each layer. concept-fraction = concept_only / universal; if universal
-    is 0 the concept contributes 0 to the mean."""
+    """Average per-concept concept-fraction at each layer over `concepts`."""
     layers = sorted({L for c in concepts if c in universal for L in universal[c]})
     out: dict[int, float] = {}
     for L in layers:
-        fractions = []
-        for c in concepts:
-            if c not in universal or L not in universal[c]:
-                continue
-            u = universal[c][L]
-            co = concept_only.get(c, {}).get(L, 0)
-            fractions.append(co / u if u > 0 else 0.0)
+        fractions = [
+            concept_fraction(concept_only.get(c, {}).get(L, 0), universal[c][L])
+            for c in concepts if c in universal and L in universal[c]
+        ]
         out[L] = sum(fractions) / len(fractions) if fractions else 0.0
     return out
 
