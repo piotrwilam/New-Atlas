@@ -1,0 +1,31 @@
+# @package _global_
+# Paper Figure 2: layer-resolved concept-fraction profiles per (group, model).
+#
+# Two panels (Python | Rust); each panel shows three concept groups
+# (Modular / Non-modular / Builtin or Object) for each model (Qwen, DS),
+# total 6 lines per panel.
+#
+# Concept fraction = |concept_only| / |universal| per concept per layer,
+# averaged across all concepts in (group, model).
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure2_concept_fraction_profile
+
+# Order controls line colour assignment (matplotlib default cycle).
+# Matches the legend order in the v1 paper figure.
+panels:
+  - lang: P
+    title: "Python (eps=0.5, cons=0.8)"
+    groups: [Builtin, Modular, Non-modular]
+    models: [QW, DS]
+  - lang: R
+    title: "Rust (eps=0.5, cons=0.8)"
+    groups: [Modular, Non-modular, Object]
+    models: [QW, DS]
+
+figsize: [14, 5]
+style: paper

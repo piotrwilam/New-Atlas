@@ -1,0 +1,17 @@
+# @package _global_
+# Paper Figure 12: circuit size by layer — Rust × DeepSeek, coloured by flow type.
+# 75 concepts: 5 build_and_hold, 63 late_emergence, 7 unclassified.
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure12_circuit_size_rust_deepseek
+
+model: DS
+lang: R
+partition: universal
+
+figsize: [14, 5]
+style: paper

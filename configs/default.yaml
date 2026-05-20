@@ -1,0 +1,24 @@
+# Global defaults shared by every experiment.
+#
+# Override at the command line:
+#   python experiments/fig5_rust_dendrogram.py figure=figure5_dendrogram extraction.eps=0.1
+
+paper: atlas2x2
+
+# Extraction-stage defaults (the paper's main setting).
+extraction:
+  eps: 0.5
+  cons: 0.8
+
+# Resolved at runtime from ATLAS_DATA_ROOT env var; default in atlas.paths.
+# Per-experiment paths should be relative to this.
+data_root: ${oc.env:ATLAS_DATA_ROOT, ${oc.env:HOME}/Data/New-Atlas}
+
+# Where the experiment writes its outputs. ${now} is filled in by Hydra.
+run_name: ${paper}_${figure.name}_${now:%y%m%d_%H%M%S}
+
+hydra:
+  run:
+    dir: results/${run_name}
+  job:
+    chdir: false

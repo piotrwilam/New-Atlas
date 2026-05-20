@@ -1,0 +1,23 @@
+# @package _global_
+# Paper Figure 13 (Appendix E): Python concept clustering — Qwen2.5-Coder-7B at L14.
+# Atomicity grouping (Assert, Pass, Continue, Break) should emerge as the
+# earliest merges; control-flow sub-clusters (Try/While/With, For/AsyncFor)
+# next; builtins form a separate "poverty cluster" driven by tiny concept-only
+# sets.
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure13_python_dendrogram_qwen
+
+model: QW
+lang: P
+layer: 14
+
+color_threshold: null
+
+figsize: [14, 4.5]
+
+style: paper

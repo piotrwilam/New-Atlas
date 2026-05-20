@@ -1,0 +1,22 @@
+# @package _global_
+# Paper Figure 3: cross-language neuron sharing by equivalence class.
+# Grouped bar chart: one bar per (model, equivalence_class). The y=0.10
+# H6 threshold is overlaid as a dashed line. The 2.3× claim in §5.3 is
+# the ratio of (mean of bars over DS) / (mean of bars over QW).
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure3_cross_language_sharing
+
+# Models in legend order — DS first (taller bars) so the colour assignment
+# matches the v1 paper (DS=blue, QW=orange).
+models: [DS, QW]
+
+# H6 threshold from §5.3 — bars must clear 10 % to count as significant sharing.
+h6_threshold: 0.10
+
+figsize: [13, 6]
+style: paper

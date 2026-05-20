@@ -1,0 +1,75 @@
+# @package _global_
+# Paper Figure 6: validation of the §6.2 four-cluster claim.
+#
+# Tests whether each of the four hypothesised Rust meta-circuits at L14 in
+# Qwen has within-group Jaccard cohesion higher than a same-size random
+# draw from the universe of Rust concepts.
+#
+# Result (frozen from earlier validation, locked by tests/test_paper_numbers.py
+# for G1 and reproduced by this experiment for the full set):
+#   G1 type-system traits:    observed 0.535, p < 0.001  — STRONGLY significant
+#   G2 memory/ownership:      observed 0.190, p ≈ 0.052  — fails at α = 0.05
+#   G3 data definition:       observed 0.199, p ≈ 0.038  — borderline
+#   G4 control-flow + module: observed 0.129, p ≈ 0.296  — random
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure6_four_cluster_test
+
+model: QW
+lang: R
+layer: 14
+
+# Permutation-test RNG: locked at the function level so anyone rerunning
+# the script gets identical p-values to the digits reported in the paper.
+n_perm: 10000
+seed: 42
+
+# The four hypothesised groups from §6.2 of the v2 paper draft.
+# Each is a 9-member subset of the L14 Rust concepts.
+groups:
+  G1_type_system_traits:
+    - Enum
+    - Send
+    - Option
+    - Iterator
+    - Copy
+    - Eq
+    - Drop
+    - Debug
+    - ToString
+  G2_memory_ownership:
+    - Pin
+    - Mutex
+    - Arc
+    - Box
+    - Vec
+    - Impl
+    - Async
+    - Move
+    - Future
+  G3_data_definition:
+    - Struct
+    - Let
+    - String
+    - Trait
+    - Default
+    - Display
+    - Hash
+    - Return
+    - Read
+  G4_control_flow_module:
+    - Fn
+    - Pub
+    - Use
+    - Crate
+    - While
+    - Break
+    - Loop
+    - If
+    - Match
+
+style: paper

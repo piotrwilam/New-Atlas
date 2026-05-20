@@ -1,0 +1,19 @@
+# @package _global_
+# Paper Figure 11: circuit size by layer — Python × DeepSeek, coloured by flow type.
+# 106 concepts: 7 build_and_hold (atomicity concepts, but with DeepSeek's
+# monotonic dynamics instead of Qwen's two_phase), 89 late_emergence,
+# 1 two_phase, 9 unclassified.
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure11_circuit_size_python_deepseek
+
+model: DS
+lang: P
+partition: universal
+
+figsize: [14, 5]
+style: paper

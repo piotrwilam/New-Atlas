@@ -1,0 +1,23 @@
+# @package _global_
+# Paper Figure 5b: Rust concept clustering — DeepSeek-Coder-V1-6.7B at L14.
+# Second panel of Figure 5 (5a is Qwen, this is DeepSeek). Same script and
+# code path as 5a; only the (model, lang, layer) cell changes.
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure5b_rust_dendrogram_deepseek
+
+model: DS
+lang: R
+layer: 14
+
+# DeepSeek produces fewer, broader clusters than Qwen on Rust (2 groups vs 4
+# in the paper's v1 reading). Let scipy pick the cut.
+color_threshold: null
+
+figsize: [14, 4.5]
+
+style: paper
