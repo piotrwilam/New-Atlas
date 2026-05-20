@@ -11,6 +11,7 @@ from atlas.analysis.cross_language import (
 )
 from atlas.analysis.cross_model import cross_model_correlation
 from atlas.analysis.decomposition import concept_fraction, decompose_sets
+from atlas.analysis.dissociation import compute_dissociation_score
 from atlas.analysis.flow_types import (
     classify_all_flow_types,
     classify_flow_type,
@@ -28,6 +29,7 @@ __all__ = [
     "EQUIVALENCE_CLASSES",
     "classify_all_flow_types",
     "classify_flow_type",
+    "compute_dissociation_score",
     "concept_fraction",
     "cross_language_sharing_fraction",
     "cross_model_correlation",

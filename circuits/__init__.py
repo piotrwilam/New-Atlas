@@ -1,26 +1,17 @@
-from .extraction import ActivationExtractor
-from .binarization import PairRepresentationBuilder, RawActivationCollector
-from .marginalization import UniversalModuleComputer
-from .metrics import jaccard_similarity, jaccard_distance, entanglement_index, compute_jaccard_matrix
-from .pipeline import Module2Pipeline
-from .io_utils import (save_atlas_hdf5, load_atlas_hdf5,
-                       save_activations_hdf5, load_activations_hdf5,
-                       save_checkpoint, load_checkpoint)
+"""Layer 1: artifact-generation pipeline (frozen, GPU-required to rerun).
 
-__all__ = [
-    "ActivationExtractor",
-    "PairRepresentationBuilder",
-    "RawActivationCollector",
-    "UniversalModuleComputer",
-    "jaccard_similarity",
-    "jaccard_distance",
-    "entanglement_index",
-    "compute_jaccard_matrix",
-    "Module2Pipeline",
-    "save_atlas_hdf5",
-    "load_atlas_hdf5",
-    "save_activations_hdf5",
-    "load_activations_hdf5",
-    "save_checkpoint",
-    "load_checkpoint",
-]
+Module-level re-exports are intentionally omitted because individual
+modules pull in heavy optional dependencies:
+    - extraction, binarization, marginalization, pipeline, ablation → torch
+    - probes → scikit-learn
+    - metrics, io_utils → numpy / h5py only
+
+Importing the package shouldn't force the heavy deps. Always import the
+specific submodule you need:
+
+    from circuits.extraction import ActivationExtractor
+    from circuits.probes import train_concept_probe
+    from circuits.ablation import AblationHook
+    from circuits.metrics import jaccard_similarity
+    from circuits.io_utils import load_atlas_hdf5
+"""
