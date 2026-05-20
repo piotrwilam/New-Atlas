@@ -1,0 +1,25 @@
+# @package _global_
+# Paper Figure 1a/1b: concept-fraction Qwen vs DeepSeek scatter,
+# one panel per language. The y=x line is drawn; rho is the Spearman
+# rank correlation between the two models' mean concept fractions.
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure1_concept_scatter
+
+panels:
+  - lang: P
+    name: 01a_concept_scatter_python
+    title_prefix: "P"
+  - lang: R
+    name: 01b_concept_scatter_rust
+    title_prefix: "R"
+
+# y=x reference line bounds.
+axis_max: 0.5
+
+figsize: [7, 7]
+style: paper

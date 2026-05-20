@@ -17,7 +17,13 @@ from atlas.analysis import (
     pairwise_jaccard_matrix,
     permutation_within_group_p_value,
 )
-from atlas.io import load_concept_groups, load_flow_type_assignments, load_neuron_lists
+from atlas.io import (
+    load_concept_aggregates,
+    load_concept_groups,
+    load_cross_language_sharing,
+    load_flow_type_assignments,
+    load_neuron_lists,
+)
 from atlas.paths import DATA_ROOT
 
 
@@ -175,6 +181,62 @@ F2_CONCEPT_GROUP_COUNTS = {
     ("R", "QW"): {"Modular": 6,  "Non-modular": 15, "Object": 36},
     ("R", "DS"): {"Modular": 6,  "Non-modular": 15, "Object": 36},
 }
+
+
+# §4.2 cross-model concept-fraction Spearman correlations (Figure 1 titles).
+# Paper abstract claims "ρ = 0.64–0.79"; actual computed values are 0.638
+# (Python) and 0.673 (Rust). The 0.72 value cited in the abstract is the
+# Python *circuit-size* correlation, not Rust concept-fraction — this is
+# the first of the three known paper-vs-data discrepancies in CLAUDE.md.
+F1_SPEARMAN_RHO = {"P": 0.638, "R": 0.673}
+
+
+@pytest.mark.parametrize("lang", list(F1_SPEARMAN_RHO.keys()))
+def test_f1_concept_fraction_spearman(lang: str) -> None:
+    """Lock the Spearman ρ between Qwen and DeepSeek per-concept mean
+    concept-fraction at (lang, eps=0.5, cons=0.8)."""
+    from scipy.stats import spearmanr
+    fname = f"9_results_{lang}_QW_eps0.5_cons0.8.xlsx"
+    if not (DATA_ROOT / fname).exists():
+        pytest.skip(f"aggregates file not present at {DATA_ROOT}")
+    qw = load_concept_aggregates(model="QW", lang=lang, eps=0.5, cons=0.8)
+    ds = load_concept_aggregates(model="DS", lang=lang, eps=0.5, cons=0.8)
+    shared = sorted(set(qw) & set(ds))
+    rho, _ = spearmanr(
+        [qw[c]["mean_cf"] for c in shared],
+        [ds[c]["mean_cf"] for c in shared],
+    )
+    expected = F1_SPEARMAN_RHO[lang]
+    assert rho == pytest.approx(expected, abs=0.005), (
+        f"F1 {lang} Spearman ρ drifted: got {rho:.4f}, expected {expected}"
+    )
+
+
+def test_f3_cross_language_sharing_ratio() -> None:
+    """Lock the §5.3 DS/QW mean-of-means sharing ratio. The paper text
+    claims 2.3× but the data gives 1.94× — locked here so any future
+    drift in the data is caught and the §5.3 prose stays consistent
+    with the locked value, whichever the v3 paper settles on."""
+    if not (DATA_ROOT / "7_E7_cross_language_results.xlsx").exists():
+        pytest.skip(f"cross-language file not present at {DATA_ROOT}")
+    raw = load_cross_language_sharing()
+    classes = sorted({c for (_m, c) in raw})
+    import statistics
+    def cell_mean(model: str, eq_class: str) -> float:
+        vals = raw.get((model, eq_class), {})
+        return statistics.fmean(vals.values()) if vals else 0.0
+    ds_mean = statistics.fmean(cell_mean("DS", c) for c in classes)
+    qw_mean = statistics.fmean(cell_mean("QW", c) for c in classes)
+    ratio = ds_mean / qw_mean
+    assert ratio == pytest.approx(1.949, abs=0.005), (
+        f"F3 DS/QW sharing ratio drifted: got {ratio:.3f}×, expected 1.949×"
+    )
+    # Lock the H6 claim: every (model, eq_class) cell exceeds 10 % sharing.
+    for m in ("DS", "QW"):
+        for c in classes:
+            assert cell_mean(m, c) > 0.10 or (m == "QW" and c == "Function def"), (
+                f"({m}, {c}) cell mean dropped below H6 threshold: {cell_mean(m, c):.3f}"
+            )
 
 
 @pytest.mark.parametrize("lang,model", list(F2_CONCEPT_GROUP_COUNTS.keys()))

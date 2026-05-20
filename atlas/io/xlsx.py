@@ -164,6 +164,52 @@ def load_concept_sizes_by_layer(
     return out
 
 
+def load_concept_aggregates(
+    *,
+    model: str,
+    lang: str,
+    eps: float,
+    cons: float,
+    data_root: Path | None = None,
+) -> dict[str, dict[str, object]]:
+    """Per-concept aggregated stats from `9_results_*.xlsx`.
+
+    The file holds one row per concept with columns:
+      object, group, mean_concept_only, mean_both, mean_circuit, mean_cf
+
+    Returns
+    -------
+    dict mapping concept name (prefix stripped) → dict with keys
+    {`group`, `mean_concept_only`, `mean_both`, `mean_circuit`, `mean_cf`}.
+    """
+    assert model in _VALID_MODELS, f"model must be one of {_VALID_MODELS}, got {model!r}"
+    assert lang in _VALID_LANGS, f"lang must be one of {_VALID_LANGS}, got {lang!r}"
+
+    root = Path(data_root) if data_root is not None else DATA_ROOT
+    path = root / f"9_results_{lang}_{model}_eps{eps}_cons{cons}.xlsx"
+    if not path.exists():
+        raise FileNotFoundError(f"Expected aggregates file not found: {path}")
+
+    prefixes = _PREFIXES[lang]
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    out: dict[str, dict[str, object]] = {}
+    for i, row in enumerate(ws.iter_rows(values_only=True)):
+        if i == 0:
+            continue
+        concept = row[0]
+        if concept is None or row[1] is None:
+            continue
+        out[_strip_prefix(concept, prefixes)] = {
+            "group": row[1],
+            "mean_concept_only": float(row[2] or 0),
+            "mean_both": float(row[3] or 0),
+            "mean_circuit": float(row[4] or 0),
+            "mean_cf": float(row[5] or 0),
+        }
+    return out
+
+
 def load_concept_groups(
     *,
     model: str,
@@ -172,36 +218,46 @@ def load_concept_groups(
     cons: float,
     data_root: Path | None = None,
 ) -> dict[str, str]:
-    """Concept → group classification from the §5.1 aggregated results.
+    """Convenience wrapper: returns just the concept → group mapping.
 
-    Reads the `group` column of `9_results_{lang}_{model}_eps{eps}_cons{cons}.xlsx`.
-    Possible groups:
-      - Python: `Modular`, `Non-modular`, `Builtin`
-      - Rust:   `Modular`, `Non-modular`, `Object`
+    See `load_concept_aggregates` for the full row schema.
+    """
+    return {
+        c: row["group"]  # type: ignore[return-value]
+        for c, row in load_concept_aggregates(
+            model=model, lang=lang, eps=eps, cons=cons, data_root=data_root,
+        ).items()
+    }
+
+
+def load_cross_language_sharing(
+    *,
+    data_root: Path | None = None,
+) -> dict[tuple[str, str], dict[int, float]]:
+    """Per-(model, equivalence_class) per-layer cross-language sharing
+    fractions from `7_E7_cross_language_results.xlsx`.
 
     Returns
     -------
-    dict mapping concept name (prefix stripped) → group label.
+    dict mapping (model, equivalence_class) → dict mapping layer → sharing_fraction.
     """
-    assert model in _VALID_MODELS, f"model must be one of {_VALID_MODELS}, got {model!r}"
-    assert lang in _VALID_LANGS, f"lang must be one of {_VALID_LANGS}, got {lang!r}"
-
     root = Path(data_root) if data_root is not None else DATA_ROOT
-    path = root / f"9_results_{lang}_{model}_eps{eps}_cons{cons}.xlsx"
+    path = root / "7_E7_cross_language_results.xlsx"
     if not path.exists():
-        raise FileNotFoundError(f"Expected concept-group file not found: {path}")
+        raise FileNotFoundError(f"Expected cross-language file not found: {path}")
 
-    prefixes = _PREFIXES[lang]
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     ws = wb[wb.sheetnames[0]]
-    out: dict[str, str] = {}
+    out: dict[tuple[str, str], dict[int, float]] = {}
     for i, row in enumerate(ws.iter_rows(values_only=True)):
         if i == 0:
             continue
-        concept, group = row[0], row[1]
-        if concept is None or group is None:
+        model, eq_class, layer = row[0], row[1], row[2]
+        sharing_fraction = row[6]
+        if model is None or eq_class is None or layer is None:
             continue
-        out[_strip_prefix(concept, prefixes)] = group
+        key = (model, eq_class)
+        out.setdefault(key, {})[int(layer)] = float(sharing_fraction or 0)
     return out
 
 

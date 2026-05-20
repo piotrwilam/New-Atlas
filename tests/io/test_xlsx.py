@@ -110,6 +110,49 @@ def test_load_concept_groups(tmp_path: Path) -> None:
     assert out == {"Import": "Modular", "For": "Non-modular", "len": "Builtin"}
 
 
+def test_load_concept_aggregates(tmp_path: Path) -> None:
+    """Loader returns the full per-concept aggregated row used by F1."""
+    from atlas.io.xlsx import load_concept_aggregates
+    path = tmp_path / "9_results_R_DS_eps0.5_cons0.8.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["object", "group", "mean_concept_only", "mean_both", "mean_circuit", "mean_cf"])
+    ws.append(["rust__Iterator", "Object", 132.5, 1126.0, 1258.5, 0.349])
+    wb.save(path)
+
+    out = load_concept_aggregates(model="DS", lang="R", eps=0.5, cons=0.8, data_root=tmp_path)
+    assert set(out) == {"Iterator"}
+    assert out["Iterator"] == {
+        "group": "Object",
+        "mean_concept_only": 132.5,
+        "mean_both": 1126.0,
+        "mean_circuit": 1258.5,
+        "mean_cf": 0.349,
+    }
+
+
+def test_load_cross_language_sharing(tmp_path: Path) -> None:
+    """Loader returns per-(model, eq_class) per-layer sharing fractions
+    from 7_E7_cross_language_results.xlsx (used by F3)."""
+    from atlas.io.xlsx import load_cross_language_sharing
+    path = tmp_path / "7_E7_cross_language_results.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["model", "equivalence_class", "layer",
+               "py_pool_size", "rs_pool_size", "shared_count",
+               "sharing_fraction", "p_value"])
+    ws.append(["QW", "Iteration", 0, 10, 12, 1, 0.05, 0.5])
+    ws.append(["QW", "Iteration", 1, 15, 14, 5, 0.25, 0.01])
+    ws.append(["DS", "Iteration", 0, 20, 18, 10, 0.50, 0.001])
+    wb.save(path)
+
+    out = load_cross_language_sharing(data_root=tmp_path)
+    assert out == {
+        ("QW", "Iteration"): {0: 0.05, 1: 0.25},
+        ("DS", "Iteration"): {0: 0.50},
+    }
+
+
 def test_load_flow_type_assignments(tmp_path: Path) -> None:
     """Loader returns per-concept flow type at one (lang, model) cell,
     filtered from the all-cells file, with the language prefix stripped."""
