@@ -262,7 +262,7 @@ Note: The `R` prefix on Rust notebook filenames (R1A, R2, etc.) is separate from
 
 ## Shared Infrastructure
 
-All notebooks use the same `src/module2/` codebase:
+All notebooks use the same `circuits/` codebase:
 
 | Module | Used by | Purpose |
 |---|---|---|

@@ -79,7 +79,7 @@ class Module2Pipeline:
             if actual_idx % self.checkpoint_every == 0:
                 ckpt_path = os.path.join(
                     self.checkpoint_dir,
-                    f"module2_ckpt_{actual_idx}.pkl"
+                    f"circuit_ckpt_{actual_idx}.pkl"
                 )
                 save_checkpoint(ckpt_path, pair_masks, actual_idx)
                 logger.info(f"Checkpoint: {ckpt_path} ({actual_idx} pairs)")

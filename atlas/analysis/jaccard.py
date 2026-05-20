@@ -2,7 +2,7 @@
 
 This module operates on Python `set[int]` values, which is what the
 decomposition-stage XLSX loader returns. There is a separate
-array-based Jaccard in `src/module2/metrics.py` for boolean-mask inputs
+array-based Jaccard in `circuits/metrics.py` for boolean-mask inputs
 from the binarisation stage; the two are kept distinct because their
 inputs are not interchangeable.
 """
@@ -19,7 +19,7 @@ def jaccard_sets(a: set[int], b: set[int]) -> float:
 
     Returns |A ∩ B| / |A ∪ B|. When both sets are empty, returns 0.0
     by convention (matches the array-based jaccard_similarity in
-    src/module2/metrics.py).
+    circuits/metrics.py).
 
     Pure function. No mutation.
     """
