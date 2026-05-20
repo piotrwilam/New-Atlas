@@ -17,7 +17,7 @@ from atlas.analysis import (
     pairwise_jaccard_matrix,
     permutation_within_group_p_value,
 )
-from atlas.io import load_flow_type_assignments, load_neuron_lists
+from atlas.io import load_concept_groups, load_flow_type_assignments, load_neuron_lists
 from atlas.paths import DATA_ROOT
 
 
@@ -162,5 +162,31 @@ def test_f9_f12_flow_type_counts(lang: str, model: str) -> None:
     expected = F9_F12_FLOW_TYPE_COUNTS[(lang, model)]
     assert dict(counts) == expected, (
         f"({lang},{model}) flow-type counts drifted: got {dict(counts)}, "
+        f"expected {expected}"
+    )
+
+
+# §5.1 concept-group counts per (lang, model) cell, from the
+# 9_results_*.xlsx aggregations. Total per language is constant across
+# models because the classification is by syntax type, not by model.
+F2_CONCEPT_GROUP_COUNTS = {
+    ("P", "QW"): {"Modular": 6,  "Non-modular": 18, "Builtin": 34},
+    ("P", "DS"): {"Modular": 6,  "Non-modular": 18, "Builtin": 34},
+    ("R", "QW"): {"Modular": 6,  "Non-modular": 15, "Object": 36},
+    ("R", "DS"): {"Modular": 6,  "Non-modular": 15, "Object": 36},
+}
+
+
+@pytest.mark.parametrize("lang,model", list(F2_CONCEPT_GROUP_COUNTS.keys()))
+def test_f2_concept_group_counts(lang: str, model: str) -> None:
+    """Lock the §5.1 group counts per cell."""
+    fname = f"9_results_{lang}_{model}_eps0.5_cons0.8.xlsx"
+    if not (DATA_ROOT / fname).exists():
+        pytest.skip(f"results file not present at {DATA_ROOT}")
+    groups = load_concept_groups(model=model, lang=lang, eps=0.5, cons=0.8)
+    counts = Counter(groups.values())
+    expected = F2_CONCEPT_GROUP_COUNTS[(lang, model)]
+    assert dict(counts) == expected, (
+        f"({lang},{model}) concept-group counts drifted: got {dict(counts)}, "
         f"expected {expected}"
     )

@@ -94,6 +94,22 @@ def test_load_concept_sizes_by_layer_universal(tmp_path: Path) -> None:
     assert sizes["Import"] == {0: 13, 1: 25, 14: 108}  # concept_only + both
 
 
+def test_load_concept_groups(tmp_path: Path) -> None:
+    """Loader returns the §5.1 concept → group classification."""
+    from atlas.io.xlsx import load_concept_groups
+    path = tmp_path / "9_results_P_QW_eps0.5_cons0.8.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["object", "group", "mean_concept_only", "mean_both", "mean_circuit", "mean_cf"])
+    ws.append(["ast__Import",   "Modular",     100.0, 500.0, 600.0, 0.17])
+    ws.append(["ast__For",      "Non-modular", 50.0,  900.0, 950.0, 0.05])
+    ws.append(["builtin__len",  "Builtin",     20.0,  800.0, 820.0, 0.02])
+    wb.save(path)
+
+    out = load_concept_groups(model="QW", lang="P", eps=0.5, cons=0.8, data_root=tmp_path)
+    assert out == {"Import": "Modular", "For": "Non-modular", "len": "Builtin"}
+
+
 def test_load_flow_type_assignments(tmp_path: Path) -> None:
     """Loader returns per-concept flow type at one (lang, model) cell,
     filtered from the all-cells file, with the language prefix stripped."""

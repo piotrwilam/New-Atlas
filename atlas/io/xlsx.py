@@ -164,6 +164,47 @@ def load_concept_sizes_by_layer(
     return out
 
 
+def load_concept_groups(
+    *,
+    model: str,
+    lang: str,
+    eps: float,
+    cons: float,
+    data_root: Path | None = None,
+) -> dict[str, str]:
+    """Concept → group classification from the §5.1 aggregated results.
+
+    Reads the `group` column of `9_results_{lang}_{model}_eps{eps}_cons{cons}.xlsx`.
+    Possible groups:
+      - Python: `Modular`, `Non-modular`, `Builtin`
+      - Rust:   `Modular`, `Non-modular`, `Object`
+
+    Returns
+    -------
+    dict mapping concept name (prefix stripped) → group label.
+    """
+    assert model in _VALID_MODELS, f"model must be one of {_VALID_MODELS}, got {model!r}"
+    assert lang in _VALID_LANGS, f"lang must be one of {_VALID_LANGS}, got {lang!r}"
+
+    root = Path(data_root) if data_root is not None else DATA_ROOT
+    path = root / f"9_results_{lang}_{model}_eps{eps}_cons{cons}.xlsx"
+    if not path.exists():
+        raise FileNotFoundError(f"Expected concept-group file not found: {path}")
+
+    prefixes = _PREFIXES[lang]
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    out: dict[str, str] = {}
+    for i, row in enumerate(ws.iter_rows(values_only=True)):
+        if i == 0:
+            continue
+        concept, group = row[0], row[1]
+        if concept is None or group is None:
+            continue
+        out[_strip_prefix(concept, prefixes)] = group
+    return out
+
+
 def load_flow_type_assignments(
     *,
     model: str,
