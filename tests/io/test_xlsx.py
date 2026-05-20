@@ -94,6 +94,24 @@ def test_load_concept_sizes_by_layer_universal(tmp_path: Path) -> None:
     assert sizes["Import"] == {0: 13, 1: 25, 14: 108}  # concept_only + both
 
 
+def test_load_flow_type_assignments(tmp_path: Path) -> None:
+    """Loader returns per-concept flow type at one (lang, model) cell,
+    filtered from the all-cells file, with the language prefix stripped."""
+    from atlas.io.xlsx import load_flow_type_assignments
+    path = tmp_path / "7_E6_flow_type_assignments.xlsx"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["lang", "model", "concept", "flow_type", "max_size", "peak_layer"])
+    ws.append(["P", "QW", "ast__Import", "two_phase", 3500, 21])
+    ws.append(["P", "QW", "builtin__len", "late_emergence", 3000, 20])
+    ws.append(["P", "DS", "ast__Import", "build_and_hold", 4000, 26])  # other cell
+    ws.append(["R", "QW", "rust__Use", "two_phase", 3400, 19])         # other cell
+    wb.save(path)
+
+    out = load_flow_type_assignments(model="QW", lang="P", data_root=tmp_path)
+    assert out == {"Import": "two_phase", "len": "late_emergence"}
+
+
 def test_load_concept_sizes_by_layer_concept_only(tmp_path: Path) -> None:
     """`concept_only` partition reads the n_concept_only column directly."""
     from atlas.io.xlsx import load_concept_sizes_by_layer

@@ -162,3 +162,47 @@ def load_concept_sizes_by_layer(
             name = _strip_prefix(obj, prefixes)
             out.setdefault(name, {})[int(layer)] = size
     return out
+
+
+def load_flow_type_assignments(
+    *,
+    model: str,
+    lang: str,
+    data_root: Path | None = None,
+) -> dict[str, str]:
+    """Per-concept flow-type assignments at one (lang, model) cell.
+
+    Flow type is the §6.1 classification of each concept's circuit-size-by-
+    layer profile into one of: `two_phase`, `build_and_hold`,
+    `late_emergence`, `unclassified`. Used by paper figures F9-F12 to
+    colour-code per-concept circuit-size curves.
+
+    Reads `7_E6_flow_type_assignments.xlsx` from DATA_ROOT — a single file
+    that holds all four (lang, model) cells; this function filters to one.
+
+    Returns
+    -------
+    dict mapping concept name (prefix stripped) → flow_type string.
+    """
+    assert model in _VALID_MODELS, f"model must be one of {_VALID_MODELS}, got {model!r}"
+    assert lang in _VALID_LANGS, f"lang must be one of {_VALID_LANGS}, got {lang!r}"
+
+    root = Path(data_root) if data_root is not None else DATA_ROOT
+    path = root / "7_E6_flow_type_assignments.xlsx"
+    if not path.exists():
+        raise FileNotFoundError(f"Expected flow-type file not found: {path}")
+
+    prefixes = _PREFIXES[lang]
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb[wb.sheetnames[0]]
+    out: dict[str, str] = {}
+    for i, row in enumerate(ws.iter_rows(values_only=True)):
+        if i == 0:
+            continue
+        row_lang, row_model, concept, flow_type = row[0], row[1], row[2], row[3]
+        if row_lang != lang or row_model != model:
+            continue
+        if concept is None or flow_type is None:
+            continue
+        out[_strip_prefix(concept, prefixes)] = flow_type
+    return out

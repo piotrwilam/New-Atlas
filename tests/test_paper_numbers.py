@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import pytest
 
+from collections import Counter
+
 from atlas.analysis import (
     pairwise_jaccard_matrix,
     permutation_within_group_p_value,
 )
-from atlas.io import load_neuron_lists
+from atlas.io import load_flow_type_assignments, load_neuron_lists
 from atlas.paths import DATA_ROOT
 
 
@@ -136,3 +138,29 @@ def test_f6_four_cluster_observed_and_p_value(
             f"{group_name} p-value drifted: got p={result['p_value']:.4f}, "
             f"expected {expected_p}"
         )
+
+
+# Locks the per-cell flow-type counts in figures F9–F12. The legend in
+# each panel reports "{flow_type} ({n})" and these counts are the cited
+# numbers in §6.1 ("In Qwen, these are the only Python concepts
+# classified as `two_phase`. ... 7 of 7 ... atomicity super-cluster").
+F9_F12_FLOW_TYPE_COUNTS = {
+    ("P", "QW"): {"two_phase": 7,       "late_emergence": 95, "unclassified": 4},
+    ("R", "QW"): {"two_phase": 2,       "late_emergence": 71, "unclassified": 2},
+    ("P", "DS"): {"build_and_hold": 7,  "late_emergence": 89, "two_phase": 1, "unclassified": 9},
+    ("R", "DS"): {"build_and_hold": 5,  "late_emergence": 63, "unclassified": 7},
+}
+
+
+@pytest.mark.parametrize("lang,model", list(F9_F12_FLOW_TYPE_COUNTS.keys()))
+def test_f9_f12_flow_type_counts(lang: str, model: str) -> None:
+    """Lock the §6.1 flow-type distribution per (lang, model) cell."""
+    if not (DATA_ROOT / "7_E6_flow_type_assignments.xlsx").exists():
+        pytest.skip(f"flow-type file not present at {DATA_ROOT}")
+    flow_types = load_flow_type_assignments(model=model, lang=lang)
+    counts = Counter(flow_types.values())
+    expected = F9_F12_FLOW_TYPE_COUNTS[(lang, model)]
+    assert dict(counts) == expected, (
+        f"({lang},{model}) flow-type counts drifted: got {dict(counts)}, "
+        f"expected {expected}"
+    )
