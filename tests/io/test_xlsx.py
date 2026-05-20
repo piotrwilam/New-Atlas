@@ -74,6 +74,44 @@ def test_python_ast_and_builtin_prefixes_both_stripped(tmp_path: Path) -> None:
     assert out["range"] == {6}
 
 
+def test_load_concept_sizes_by_layer_universal(tmp_path: Path) -> None:
+    """`universal` partition returns concept_only + both. Used by F4."""
+    from atlas.io.xlsx import load_concept_sizes_by_layer
+    p1 = tmp_path / "P_QW_4_neuron_list_eps0.5_cons0.8_layers_part1_both.xlsx"
+    p2 = tmp_path / "P_QW_4_neuron_list_eps0.5_cons0.8_layers_part2_both.xlsx"
+    _write_synthetic_xlsx(p1, [
+        ("ast__Import", 0, 3, 10, 7, "[]", "[]", "[]"),
+        ("ast__Import", 1, 5, 20, 3, "[]", "[]", "[]"),
+    ])
+    _write_synthetic_xlsx(p2, [
+        ("ast__Import", 14, 8, 100, 2, "[]", "[]", "[]"),
+    ])
+    sizes = load_concept_sizes_by_layer(
+        model="QW", lang="P", eps=0.5, cons=0.8,
+        partition="universal", data_root=tmp_path,
+    )
+    assert set(sizes) == {"Import"}
+    assert sizes["Import"] == {0: 13, 1: 25, 14: 108}  # concept_only + both
+
+
+def test_load_concept_sizes_by_layer_concept_only(tmp_path: Path) -> None:
+    """`concept_only` partition reads the n_concept_only column directly."""
+    from atlas.io.xlsx import load_concept_sizes_by_layer
+    p1 = tmp_path / "R_QW_4_neuron_list_eps0.5_cons0.8_layers_part1_both.xlsx"
+    p2 = tmp_path / "R_QW_4_neuron_list_eps0.5_cons0.8_layers_part2_both.xlsx"
+    _write_synthetic_xlsx(p1, [
+        ("rust__Foo", 0, 3, 10, 7, "[]", "[]", "[]"),
+    ])
+    _write_synthetic_xlsx(p2, [
+        ("rust__Foo", 14, 8, 100, 2, "[]", "[]", "[]"),
+    ])
+    sizes = load_concept_sizes_by_layer(
+        model="QW", lang="R", eps=0.5, cons=0.8,
+        partition="concept_only", data_root=tmp_path,
+    )
+    assert sizes == {"Foo": {0: 3, 14: 8}}
+
+
 def test_invalid_model_raises(tmp_path: Path) -> None:
     with pytest.raises(AssertionError, match="model must be one of"):
         load_neuron_lists(

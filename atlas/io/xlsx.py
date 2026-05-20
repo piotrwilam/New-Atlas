@@ -102,3 +102,63 @@ def load_neuron_lists(
                 ) from e
             out[_strip_prefix(obj, prefixes)] = ids
     return out
+
+
+def load_concept_sizes_by_layer(
+    *,
+    model: str,
+    lang: str,
+    eps: float,
+    cons: float,
+    partition: str = "concept_only",
+    data_root: Path | None = None,
+) -> dict[str, dict[int, int]]:
+    """Load |partition set| per concept per layer.
+
+    Reads the n_{partition} count column directly — much faster than
+    `load_neuron_lists` because it skips the string-parsed neuron list.
+    Used by per-layer temporal-dynamics figures (F4) and circuit-size
+    profiles (F9–F12).
+
+    The `"universal"` partition is the universal mask A = concept_only ∪
+    both (i.e. every neuron in the universal circuit, regardless of
+    whether the keyword token also fires). This is the "Circuit size"
+    measure used in F4 and the §5.1 mean-concept-fraction table.
+
+    Returns
+    -------
+    dict mapping concept name (prefix stripped) → dict mapping layer → size.
+    """
+    assert model in _VALID_MODELS, f"model must be one of {_VALID_MODELS}, got {model!r}"
+    assert lang in _VALID_LANGS, f"lang must be one of {_VALID_LANGS}, got {lang!r}"
+    valid_partitions = {"concept_only", "both", "token_only", "universal"}
+    assert partition in valid_partitions, (
+        f"partition must be one of {sorted(valid_partitions)}, got {partition!r}"
+    )
+
+    root = Path(data_root) if data_root is not None else DATA_ROOT
+    prefixes = _PREFIXES[lang]
+
+    out: dict[str, dict[int, int]] = {}
+    for part in (1, 2):
+        fname = f"{lang}_{model}_4_neuron_list_eps{eps}_cons{cons}_layers_part{part}_both.xlsx"
+        path = root / fname
+        if not path.exists():
+            raise FileNotFoundError(f"Expected neuron-list file not found: {path}")
+        wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        ws = wb[wb.sheetnames[0]]
+        for i, row in enumerate(ws.iter_rows(values_only=True)):
+            if i == 0:
+                continue
+            obj = row[0]
+            layer = row[1]
+            if obj is None or layer is None:
+                continue
+            if partition == "universal":
+                size = int(row[2] or 0) + int(row[3] or 0)
+            else:
+                col = {"concept_only": 2, "both": 3, "token_only": 4}[partition]
+                size = int(row[col] or 0)
+            name = _strip_prefix(obj, prefixes)
+            out.setdefault(name, {})[int(layer)] = size
+    return out

@@ -1,0 +1,51 @@
+# @package _global_
+# Paper Figure 4: the 'How' axis — same atomicity concepts, different
+# temporal dynamics across the two models.
+#
+# Two side-by-side panels of concept-only set size vs layer for the six
+# atomicity-super-cluster concepts. Qwen shows a `two_phase` signature
+# (sharp spike at L2–3, collapse, re-explosion at L20+, terminal drop);
+# DeepSeek shows `build_and_hold` (monotonic gradual growth from early
+# layers, no collapse).
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure4_temporal_dynamics_atomicity
+
+lang: P
+
+# "Circuit size" in F4 is the universal-mask size |A| = |concept_only ∪ both|,
+# i.e. every neuron the concept fires on regardless of whether the bare
+# keyword token also fires. Plotting concept_only alone produces a similar
+# shape but ~4× smaller and misses the L20+ saturation.
+partition: universal
+
+# The atomicity super-cluster: computationally atomic Python constructs
+# (single-statement, no nested body). Same set in both models — what
+# differs is the temporal shape.
+concepts:
+  - Assert
+  - Break
+  - Continue
+  - Import
+  - ImportFrom
+  - Pass
+
+# Per-model panel definitions: subtitle text and layer ranges to highlight
+# (the two_phase early- and late-burst windows are shown only on Qwen).
+panels:
+  - model: QW
+    subtitle: "Qwen2.5-Coder-7B (28 layers): two_phase signature"
+    highlight_layers: [[2, 3], [19, 23]]
+  - model: DS
+    subtitle: "DeepSeek-Coder-V1-6.7B (32 layers): build_and_hold"
+    highlight_layers: []
+
+suptitle: "F4: The 'How' axis — same atomicity concepts, different temporal dynamics"
+
+figsize: [14, 5]
+
+style: paper
