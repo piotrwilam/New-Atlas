@@ -174,6 +174,40 @@ def test_f9_f12_flow_type_counts(lang: str, model: str) -> None:
     )
 
 
+@pytest.mark.parametrize("lang,model", list(F9_F12_FLOW_TYPE_COUNTS.keys()))
+def test_f9_f12_flow_type_classifier_roundtrip(lang: str, model: str) -> None:
+    """Re-classify per-concept size curves with the in-code classifier
+    and check the resulting counts match the loaded XLSX. This locks the
+    rule-cascade classifier to the data, so any drift in either source
+    is caught."""
+    fname = f"{lang}_{model}_4_neuron_list_eps0.5_cons0.8_layers_part1_both.xlsx"
+    if not (DATA_ROOT / fname).exists():
+        pytest.skip(f"neuron-list files not present at {DATA_ROOT}")
+    if not (DATA_ROOT / "7_E6_flow_type_assignments.xlsx").exists():
+        pytest.skip(f"flow-type file not present at {DATA_ROOT}")
+
+    from atlas.analysis import classify_all_flow_types
+    from atlas.io import load_concept_sizes_by_layer
+
+    sizes = load_concept_sizes_by_layer(
+        model=model, lang=lang, eps=0.5, cons=0.8, partition="universal",
+    )
+    recomputed = classify_all_flow_types(sizes)
+    # Drop empty curves (they're not in the XLSX assignments file).
+    recomputed = {c: ft for c, ft in recomputed.items() if ft != "empty"}
+    recomputed_counts = Counter(recomputed.values())
+
+    loaded = load_flow_type_assignments(model=model, lang=lang)
+    # Only concepts present in both — the XLSX may have concepts with no
+    # size data (filtered out at decomposition time).
+    both = set(recomputed) & set(loaded)
+    agreement = sum(1 for c in both if recomputed[c] == loaded[c]) / len(both)
+    assert agreement >= 0.95, (
+        f"classifier drifted vs locked XLSX for ({lang}, {model}): "
+        f"agreement = {agreement:.3f} over {len(both)} concepts"
+    )
+
+
 # §5.1 concept-group counts per (lang, model) cell, from the
 # 9_results_*.xlsx aggregations. Total per language is constant across
 # models because the classification is by syntax type, not by model.

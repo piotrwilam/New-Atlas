@@ -12,6 +12,7 @@ import random
 from itertools import combinations
 
 import numpy as np
+from scipy.cluster.hierarchy import fcluster as _scipy_fcluster
 from scipy.cluster.hierarchy import linkage as _scipy_linkage
 from scipy.spatial.distance import squareform
 
@@ -41,6 +42,39 @@ def ward_linkage_from_jaccard(jaccard_matrix: np.ndarray) -> np.ndarray:
     np.fill_diagonal(distance_matrix, 0.0)  # guard against any rounding-induced ~0
     condensed = squareform(distance_matrix, checks=False)
     return _scipy_linkage(condensed, method="ward")
+
+
+def cut_dendrogram_at_k_clusters(
+    linkage: np.ndarray,
+    labels: list[str],
+    k: int,
+) -> dict[str, int]:
+    """Cut a Ward linkage dendrogram into exactly `k` flat clusters.
+
+    Used in §6.2 to discover the four-cluster Rust meta-structure:
+    after computing pairwise Jaccard and applying Ward linkage,
+    cutting at k=4 produces the {type-system traits, memory/ownership,
+    data definition, control-flow/module} groupings that the F6
+    permutation test then validates.
+
+    Returns
+    -------
+    dict mapping leaf label → cluster id (1-indexed, as scipy reports).
+    """
+    assert linkage.ndim == 2 and linkage.shape[1] == 4, (
+        f"linkage must be (n-1, 4), got shape {linkage.shape}"
+    )
+    assert linkage.shape[0] == len(labels) - 1, (
+        f"linkage has {linkage.shape[0]} rows but labels has {len(labels)} entries "
+        f"(expected {linkage.shape[0] + 1})"
+    )
+    assert k >= 1, f"k must be ≥ 1, got {k}"
+    assert k <= len(labels), (
+        f"cannot cut into more clusters ({k}) than leaves ({len(labels)})"
+    )
+
+    cluster_ids = _scipy_fcluster(linkage, t=k, criterion="maxclust")
+    return {label: int(cid) for label, cid in zip(labels, cluster_ids)}
 
 
 def mean_pairwise_jaccard(members: list[str], masks: dict[str, set[int]]) -> float:
