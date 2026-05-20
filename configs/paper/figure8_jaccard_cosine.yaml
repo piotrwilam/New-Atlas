@@ -1,0 +1,25 @@
+# @package _global_
+# Paper Figure 8 (Appendix): probe-cosine vs concept-only-Jaccard
+# cross-validation. Two panels:
+#   Left  — Pearson r per layer (across all 276 concept pairs); the
+#           target 0.7 line is for reference, the empirical peak at
+#           L20 is r = 0.645.
+#   Right — Scatter of (Jaccard, Cosine) at the focus layer; one point
+#           per concept pair (24 ast concepts → 276 pairs).
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure8_jaccard_cosine
+
+model: QW
+lang: P
+focus_layer: 20
+
+# Visual target r value the §7.3 prose anchors at.
+r_target: 0.7
+
+figsize: [14, 5]
+style: paper

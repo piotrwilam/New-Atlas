@@ -22,7 +22,9 @@ from atlas.io import (
     load_concept_groups,
     load_cross_language_sharing,
     load_flow_type_assignments,
+    load_jaccard_cosine_correlation,
     load_neuron_lists,
+    load_probe_results,
 )
 from atlas.paths import DATA_ROOT
 
@@ -189,6 +191,43 @@ F2_CONCEPT_GROUP_COUNTS = {
 # Python *circuit-size* correlation, not Rust concept-fraction — this is
 # the first of the three known paper-vs-data discrepancies in CLAUDE.md.
 F1_SPEARMAN_RHO = {"P": 0.638, "R": 0.673}
+
+
+# §7.3 numeric claims: probe accuracy band + peak Jaccard-cosine r.
+def test_f7_probe_accuracy_band() -> None:
+    """Lock the §7.3 claim '97–100% classification accuracy at every
+    one of the 28 layers' on Qwen × Python."""
+    if not (DATA_ROOT / "P_QW_V2_probe_results.csv").exists():
+        pytest.skip(f"probe results file not present at {DATA_ROOT}")
+    per_concept = load_probe_results(model="QW", lang="P")
+    layers = sorted({L for d in per_concept.values() for L in d})
+    means = [
+        sum(d[L]["accuracy"] for d in per_concept.values() if L in d) /
+        sum(1 for d in per_concept.values() if L in d)
+        for L in layers
+    ]
+    assert min(means) >= 0.97, f"probe accuracy band drifted: min={min(means):.4f}"
+    assert max(means) <= 1.00, f"probe accuracy >1 impossible: max={max(means):.4f}"
+    # The minimum should sit at one of the last few layers (L24-27 are
+    # where the probe degrades slightly).
+    min_layer = layers[means.index(min(means))]
+    assert min_layer >= 20, (
+        f"probe accuracy minimum unexpectedly early: L{min_layer}"
+    )
+
+
+def test_f8_peak_jaccard_cosine_correlation() -> None:
+    """Lock the §7.3 claim 'r peaks at 0.645 at L20'."""
+    if not (DATA_ROOT / "P_QW_V2_cosine_jaccard_correlation.csv").exists():
+        pytest.skip(f"correlation file not present at {DATA_ROOT}")
+    per_layer = load_jaccard_cosine_correlation(model="QW", lang="P")
+    layers = sorted(per_layer.keys())
+    rs = [per_layer[L]["pearson_r"] for L in layers]
+    peak_layer = layers[rs.index(max(rs))]
+    assert peak_layer == 20, f"F8 peak layer drifted: got L{peak_layer}, expected L20"
+    assert per_layer[20]["pearson_r"] == pytest.approx(0.645, abs=0.005), (
+        f"F8 L20 Pearson r drifted: got {per_layer[20]['pearson_r']:.4f}"
+    )
 
 
 @pytest.mark.parametrize("lang", list(F1_SPEARMAN_RHO.keys()))

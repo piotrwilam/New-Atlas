@@ -1,0 +1,24 @@
+# @package _global_
+# Paper Figure 7 (panel a): per-layer linear-probe accuracy on Qwen (Python).
+#
+# Single line of mean probe accuracy across all concepts at each layer,
+# with a ±1 std envelope around it. Chance line at 0.5. §7.3 claim:
+# "97–100% classification accuracy at every one of the 28 layers".
+
+defaults:
+  - /default
+  - _self_
+
+figure:
+  name: figure7_probe_accuracy_by_layer
+
+model: QW
+lang: P
+
+# Y-axis chance line; the probe is two-class (object vs checker prompts).
+chance: 0.5
+ymin: 0.45
+ymax: 1.02
+
+figsize: [12, 5]
+style: paper
